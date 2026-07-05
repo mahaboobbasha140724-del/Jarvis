@@ -7,772 +7,791 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #00060a;
-            --panel-bg: rgba(1, 13, 20, 0.7);
-            --border-color: #0d3347;
-            --border-active: #00d4ff;
-            --color-pri: #00d4ff;
-            --color-sec: #ff6b00;
-            --color-green: #00ff88;
-            --text-main: #8ffcff;
-            --text-dim: #3a8a9a;
-            --text-white: #d8f8ff;
+            --bg: #00060a;
+            --panel: rgba(1,13,20,0.75);
+            --border: #0d3347;
+            --pri: #00d4ff;
+            --sec: #ff6b00;
+            --green: #00ff88;
+            --red: #ff2244;
+            --txt: #8ffcff;
+            --dim: #3a8a9a;
+            --white: #d8f8ff;
         }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+        canvas#particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+        header{height:64px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;backdrop-filter:blur(12px);z-index:10;position:relative;}
+        .logo h1{font-size:1.3rem;font-weight:800;letter-spacing:3px;color:var(--white);text-shadow:0 0 18px rgba(0,212,255,0.7);display:flex;align-items:center;gap:10px;}
+        .logo span{font-size:.7rem;background:rgba(0,212,255,.15);color:var(--pri);padding:2px 8px;border-radius:4px;border:1px solid rgba(0,212,255,.3);animation:pulse-badge 2s infinite;}
+        @keyframes pulse-badge{0%,100%{box-shadow:0 0 5px rgba(0,212,255,.3);}50%{box-shadow:0 0 14px rgba(0,212,255,.8);}}
+        .hdr-right{display:flex;align-items:center;gap:20px;}
+        .metric-card{display:flex;flex-direction:column;align-items:flex-end;}
+        .metric-label{font-size:.6rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);}
+        .metric-value{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--pri);font-weight:600;}
+        #live-clock{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--dim);}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        .main-container{flex:1;display:grid;grid-template-columns:320px 1fr 380px;gap:16px;padding:16px;z-index:5;height:calc(100vh - 64px);position:relative;}
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 40, 60, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(0, 40, 60, 0.15) 0%, transparent 40%);
-        }
+        .glass-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;backdrop-filter:blur(14px);box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;transition:border-color .3s;}
+        .panel-header{padding:12px 18px;border-bottom:1px solid var(--border);font-weight:600;text-transform:uppercase;font-size:.75rem;letter-spacing:1.5px;color:var(--white);display:flex;justify-content:space-between;align-items:center;}
+        .panel-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
 
-        /* Ambient glowing grid background */
-        .grid-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: linear-gradient(rgba(13, 51, 71, 0.05) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(13, 51, 71, 0.05) 1px, transparent 1px);
-            background-size: 30px 30px;
-            pointer-events: none;
-            z-index: 0;
-        }
+        /* LEFT PANEL */
+        .form-group{display:flex;flex-direction:column;gap:5px;}
+        .form-group label{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);}
+        .form-group input,.form-group select{background:rgba(0,8,15,.7);border:1px solid var(--border);border-radius:6px;padding:9px 10px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:.78rem;outline:none;transition:border-color .3s;}
+        .form-group input:focus,.form-group select:focus{border-color:var(--pri);box-shadow:0 0 8px rgba(0,212,255,.2);}
+        .btn{background:linear-gradient(135deg,rgba(0,212,255,.15),rgba(0,122,153,.15));border:1px solid var(--pri);color:var(--white);border-radius:7px;padding:11px;cursor:pointer;font-weight:600;letter-spacing:1px;text-transform:uppercase;font-size:.72rem;transition:all .25s;width:100%;}
+        .btn:hover{background:linear-gradient(135deg,rgba(0,212,255,.3),rgba(0,122,153,.3));box-shadow:0 0 16px rgba(0,212,255,.3);}
+        .btn-mic{background:rgba(0,212,255,.1);border:1px solid var(--dim);color:var(--dim);padding:9px;font-size:.7rem;letter-spacing:1px;}
+        .btn-mic.active{background:rgba(255,34,68,.15);border-color:var(--red);color:var(--red);box-shadow:0 0 14px rgba(255,34,68,.3);animation:mic-pulse 1s infinite;}
+        @keyframes mic-pulse{0%,100%{box-shadow:0 0 8px rgba(255,34,68,.3);}50%{box-shadow:0 0 22px rgba(255,34,68,.7);}}
+        .divider{height:1px;background:var(--border);margin:4px 0;}
+        .section-title{font-size:.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--dim);padding:4px 0;}
 
-        header {
-            height: 70px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            backdrop-filter: blur(10px);
-            z-index: 10;
-        }
+        /* Quick stats mini cards */
+        .mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+        .mini-stat{background:rgba(0,212,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+        .mini-stat .val{font-family:'JetBrains Mono',monospace;font-size:1.1rem;color:var(--pri);font-weight:700;}
+        .mini-stat .lbl{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;}
 
-        .logo-section h1 {
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-            color: var(--text-white);
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        /* Conversation mode badge */
+        .mode-badge{font-size:.65rem;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+        .mode-ws{background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);}
+        .mode-ai{background:rgba(0,212,255,.1);border:1px solid var(--pri);color:var(--pri);}
+        .mode-off{background:rgba(100,100,100,.1);border:1px solid #444;color:#888;}
 
-        .logo-section span {
-            font-size: 0.75rem;
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--color-pri);
-            padding: 2px 8px;
-            border-radius: 4px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-        }
+        /* CENTER */
+        .center-col{display:flex;flex-direction:column;justify-content:space-between;gap:14px;}
+        .reactor-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;}
 
-        .system-metrics {
-            display: flex;
-            gap: 25px;
-        }
+        .reactor-core{width:230px;height:230px;position:relative;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;transition:transform .3s;}
+        .reactor-core:hover{transform:scale(1.04);}
+        .ring{position:absolute;border-radius:50%;border-style:solid;transition:all .5s;}
+        .ring-1{width:100%;height:100%;border-width:3px;border-color:var(--pri);border-style:dashed;animation:spin-cw 18s linear infinite;filter:drop-shadow(0 0 12px var(--pri));}
+        .ring-2{width:82%;height:82%;border-width:2px;border-color:rgba(0,212,255,.6);animation:spin-ccw 10s linear infinite;}
+        .ring-3{width:64%;height:64%;border-width:2px;border-color:rgba(0,212,255,.3);border-style:dotted;animation:spin-cw 6s linear infinite;}
+        .reactor-face{width:45%;height:45%;border-radius:50%;background-image:url('/static/face.png');background-size:cover;background-position:center;border:2px solid rgba(0,212,255,.4);box-shadow:0 0 20px rgba(0,212,255,.3);position:absolute;z-index:2;}
+        .reactor-glow{position:absolute;width:55%;height:55%;border-radius:50%;background:radial-gradient(circle,rgba(0,212,255,.12) 0%,transparent 70%);animation:glow-pulse 2.5s ease-in-out infinite;z-index:1;}
+        @keyframes spin-cw{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+        @keyframes spin-ccw{from{transform:rotate(360deg);}to{transform:rotate(0deg);}}
+        @keyframes glow-pulse{0%,100%{opacity:.5;transform:scale(1);}50%{opacity:1;transform:scale(1.15);}}
 
-        .metric-card {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
+        /* State-based ring colors */
+        .state-LISTENING .ring-1{border-color:var(--pri);filter:drop-shadow(0 0 16px var(--pri));}
+        .state-THINKING .ring-1{border-color:var(--sec);filter:drop-shadow(0 0 16px var(--sec));}
+        .state-THINKING .ring-2{border-color:rgba(255,107,0,.6);}
+        .state-SPEAKING .ring-1{border-color:var(--green);filter:drop-shadow(0 0 20px var(--green));animation-duration:4s;}
+        .state-SPEAKING .reactor-glow{background:radial-gradient(circle,rgba(0,255,136,.18) 0%,transparent 70%);}
+        .state-OFFLINE .ring-1{border-color:#555;filter:none;animation-play-state:paused;}
+        .state-OFFLINE .ring-2,.state-OFFLINE .ring-3{border-color:#333;animation-play-state:paused;}
 
-        .metric-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-dim);
-        }
+        .status-badge{display:flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(0,8,15,.5);border:1px solid var(--border);border-radius:30px;margin-top:16px;}
+        .status-pulse{width:8px;height:8px;border-radius:50%;background:#666;}
+        #state-text{font-family:'JetBrains Mono',monospace;font-size:.85rem;letter-spacing:2px;}
 
-        .metric-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.95rem;
-            color: var(--color-pri);
-            font-weight: 600;
-        }
+        /* AI waveform visualizer */
+        .waveform{display:flex;align-items:center;gap:3px;height:30px;justify-content:center;}
+        .wave-bar{width:3px;background:var(--pri);border-radius:2px;opacity:.5;transition:height .1s ease;}
+        .state-SPEAKING .wave-bar{opacity:1;}
+        .state-LISTENING .wave-bar{opacity:.3;}
 
-        /* Layout Grid */
-        .main-container {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 350px 1fr 380px;
-            gap: 20px;
-            padding: 20px;
-            z-index: 5;
-            height: calc(100vh - 70px);
-        }
+        /* RIGHT PANEL - Console */
+        .terminal-panel{display:flex;flex-direction:column;}
+        .terminal-output{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:3px;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+        .log-entry{padding:4px 0;border-bottom:1px solid rgba(13,51,71,.3);line-height:1.5;word-break:break-word;}
+        .log-sys{color:var(--dim);}
+        .log-user{color:var(--pri);}
+        .log-jarvis{color:var(--green);}
+        .log-tool{color:var(--sec);}
+        .log-err{color:var(--red);}
+        .log-typing{color:var(--green);opacity:.7;}
 
-        /* Glass Panel */
-        .glass-panel {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: border-color 0.3s ease;
-        }
+        /* Typing dots */
+        .typing-dots span{animation:blink .8s infinite;display:inline-block;}
+        .typing-dots span:nth-child(2){animation-delay:.15s;}
+        .typing-dots span:nth-child(3){animation-delay:.3s;}
+        @keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
 
-        .panel-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 1.5px;
-            color: var(--text-white);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .terminal-input-wrap{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+        .terminal-prefix{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--pri);white-space:nowrap;}
+        .terminal-input{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:.8rem;caret-color:var(--pri);}
+        .mic-btn{background:transparent;border:1px solid var(--dim);color:var(--dim);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:.75rem;transition:all .3s;white-space:nowrap;}
+        .mic-btn.listening{border-color:var(--red);color:var(--red);box-shadow:0 0 10px rgba(255,34,68,.4);animation:mic-pulse 1s infinite;}
 
-        /* Center Column: Arc Reactor Core */
-        .center-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            justify-content: space-between;
-        }
+        /* Scrollbar */
+        ::-webkit-scrollbar{width:5px;}
+        ::-webkit-scrollbar-track{background:transparent;}
+        ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+        ::-webkit-scrollbar-thumb:hover{background:var(--pri);}
 
-        .reactor-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
+        /* Upload zone */
+        .dropzone{border:1px dashed var(--dim);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .3s;font-size:.75rem;color:var(--dim);}
+        .dropzone:hover,.dropzone.dragover{border-color:var(--pri);color:var(--pri);background:rgba(0,212,255,.04);}
+        .file-info{display:none;align-items:center;gap:8px;font-size:.75rem;color:var(--txt);font-family:'JetBrains Mono',monospace;}
+        .file-remove{background:transparent;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:.65rem;}
 
-        /* Arc Reactor CSS Animation */
-        .reactor-core {
-            width: 250px;
-            height: 250px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        /* Outer Glow Rings */
-        .reactor-outer {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 4px dashed var(--color-pri);
-            border-radius: 50%;
-            animation: rotate-clockwise 15s linear infinite;
-            filter: drop-shadow(0 0 15px var(--color-pri));
-            transition: all 0.5s ease;
-        }
-
-        .reactor-inner {
-            position: absolute;
-            width: 80%;
-            height: 80%;
-            border: 3px double var(--color-pri);
-            border-radius: 50%;
-            animation: rotate-counter-clockwise 8s linear infinite;
-            opacity: 0.8;
-            transition: all 0.5s ease;
-        }
-
-        .reactor-center {
-            width: 50%;
-            height: 50%;
-            background: radial-gradient(circle, var(--text-white) 0%, rgba(0, 212, 255, 0.4) 60%, transparent 100%);
-            border-radius: 50%;
-            box-shadow: 0 0 40px var(--color-pri);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.5s ease;
-        }
-
-        .reactor-center-logo {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-            border: 2px solid rgba(0, 212, 255, 0.5);
-        }
-
-        /* Reactor States */
-        .state-LISTENING .reactor-outer {
-            border-color: var(--color-pri);
-            animation-duration: 8s;
-            filter: drop-shadow(0 0 25px var(--color-pri));
-        }
-        .state-LISTENING .reactor-center {
-            box-shadow: 0 0 50px var(--color-pri);
-        }
-
-        .state-THINKING .reactor-outer {
-            border-color: var(--color-sec);
-            animation-duration: 4s;
-            filter: drop-shadow(0 0 25px var(--color-sec));
-        }
-        .state-THINKING .reactor-inner {
-            border-color: var(--color-sec);
-            animation-duration: 2s;
-        }
-        .state-THINKING .reactor-center {
-            background: radial-gradient(circle, #fff 0%, rgba(255, 107, 0, 0.4) 60%, transparent 100%);
-            box-shadow: 0 0 50px var(--color-sec);
-        }
-
-        .state-SPEAKING .reactor-outer {
-            border-color: var(--color-green);
-            animation-duration: 2s;
-            filter: drop-shadow(0 0 30px var(--color-green));
-        }
-        .state-SPEAKING .reactor-inner {
-            border-color: var(--color-green);
-            animation-duration: 1s;
-        }
-        .state-SPEAKING .reactor-center {
-            background: radial-gradient(circle, #fff 0%, rgba(0, 255, 136, 0.4) 60%, transparent 100%);
-            box-shadow: 0 0 60px var(--color-green);
-        }
-
-        @keyframes rotate-clockwise {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes rotate-counter-clockwise {
-            from { transform: rotate(360deg); }
-            to { transform: rotate(0deg); }
-        }
-
-        .status-badge {
-            margin-top: 20px;
-            font-size: 0.85rem;
-            letter-spacing: 2px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--color-pri);
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-pulse {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--color-pri);
-            box-shadow: 0 0 10px var(--color-pri);
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 0.6; }
-            50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 15px var(--color-pri); }
-            100% { transform: scale(0.9); opacity: 0.6; }
-        }
-
-        /* Left/Right Columns: Console & Terminal */
-        .terminal-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: rgba(0, 4, 8, 0.8);
-        }
-
-        .terminal-output {
-            flex: 1;
-            padding: 15px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            line-height: 1.5;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .log-entry {
-            border-left: 2px solid var(--border-color);
-            padding-left: 10px;
-        }
-        .log-sys { color: var(--text-dim); }
-        .log-user { color: var(--color-sec); border-left-color: var(--color-sec); }
-        .log-jarvis { color: var(--color-pri); border-left-color: var(--color-pri); }
-        .log-tool { color: var(--color-green); border-left-color: var(--color-green); }
-
-        .terminal-input-container {
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            background: rgba(1, 13, 20, 0.9);
-        }
-
-        .terminal-input-prefix {
-            padding: 15px 5px 15px 15px;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--color-pri);
-            font-weight: bold;
-        }
-
-        .terminal-input {
-            flex: 1;
-            border: none;
-            background: transparent;
-            color: var(--text-white);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            padding: 15px 15px 15px 0;
-            outline: none;
-        }
-
-        /* File Upload Panel */
-        .upload-panel {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .dropzone {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 30px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(1, 21, 32, 0.2);
-        }
-
-        .dropzone:hover, .dropzone.dragover {
-            border-color: var(--color-pri);
-            background: rgba(0, 212, 255, 0.05);
-        }
-
-        .dropzone p {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            margin-top: 5px;
-        }
-
-        .uploaded-file-info {
-            background: rgba(1, 15, 24, 0.5);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 10px 15px;
-            font-size: 0.8rem;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .file-remove-btn {
-            background: transparent;
-            border: none;
-            color: var(--color-sec);
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        /* Memory / Settings Panel */
-        .settings-content {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-group label {
-            font-size: 0.68rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-dim);
-        }
-
-        .form-group input, .form-group select {
-            background: rgba(0, 8, 15, 0.7);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 10px;
-            color: var(--text-white);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus {
-            border-color: var(--color-pri);
-        }
-
-        .save-settings-btn {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 122, 153, 0.2) 100%);
-            border: 1px solid var(--color-pri);
-            color: var(--text-white);
-            border-radius: 6px;
-            padding: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            transition: all 0.3s ease;
-        }
-
-        .save-settings-btn:hover {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.4) 0%, rgba(0, 122, 153, 0.4) 100%);
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
-        }
-
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--color-pri);
-        }
+        /* TTS toggle */
+        .tts-toggle{display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--dim);}
+        .toggle-switch{position:relative;width:36px;height:18px;}
+        .toggle-switch input{opacity:0;width:0;height:0;}
+        .toggle-slider{position:absolute;inset:0;background:#222;border-radius:18px;cursor:pointer;transition:.3s;border:1px solid var(--border);}
+        .toggle-slider:before{content:'';position:absolute;width:12px;height:12px;left:2px;bottom:2px;background:var(--dim);border-radius:50%;transition:.3s;}
+        input:checked+.toggle-slider{background:rgba(0,212,255,.2);border-color:var(--pri);}
+        input:checked+.toggle-slider:before{transform:translateX(18px);background:var(--pri);}
     </style>
 </head>
 <body>
-    <div class="grid-overlay"></div>
+<canvas id="particles"></canvas>
 
-    <header>
-        <div class="logo-section">
-            <h1>J.A.R.V.I.S <span>ARC REACTOR</span></h1>
+<header>
+    <div class="logo">
+        <h1>J.A.R.V.I.S <span>ARC REACTOR v2</span></h1>
+    </div>
+    <div class="hdr-right">
+        <div class="metric-card"><span class="metric-label">CPU</span><span class="metric-value" id="cpu-val">--</span></div>
+        <div class="metric-card"><span class="metric-label">RAM</span><span class="metric-value" id="ram-val">--</span></div>
+        <div class="metric-card"><span class="metric-label">Network</span><span class="metric-value" id="net-val">--</span></div>
+        <div id="live-clock">--:--:--</div>
+    </div>
+</header>
+
+<div class="main-container">
+
+    <!-- LEFT PANEL -->
+    <div class="glass-panel">
+        <div class="panel-header">
+            <span>System Parameters</span>
+            <span id="mode-badge" class="mode-badge mode-off">OFFLINE</span>
         </div>
-        <div class="system-metrics">
-            <div class="metric-card">
-                <span class="metric-label">CPU Usage</span>
-                <span class="metric-value" id="cpu-val">0.0%</span>
+        <div class="panel-body">
+            <div class="form-group">
+                <label>Gemini API Key (for standalone AI)</label>
+                <input type="password" id="gemini-key" placeholder="AIza...">
             </div>
-            <div class="metric-card">
-                <span class="metric-label">RAM Usage</span>
-                <span class="metric-value" id="ram-val">0.0%</span>
+            <div class="form-group">
+                <label>OpenRouter API Key</label>
+                <input type="password" id="openrouter-key" placeholder="sk-...">
             </div>
-            <div class="metric-card">
-                <span class="metric-label">Network</span>
-                <span class="metric-value" id="net-val">0.0 MB/s</span>
+            <div class="form-group">
+                <label>Operating System</label>
+                <select id="os-select">
+                    <option value="Windows">Windows</option>
+                    <option value="Darwin">macOS</option>
+                    <option value="Linux">Linux</option>
+                </select>
             </div>
-        </div>
-    </header>
+            <button class="btn" id="save-config-btn">Save &amp; Connect</button>
 
-    <div class="main-container">
-        <!-- Left Panel: Settings & File uploads -->
-        <div class="glass-panel" style="grid-column: 1;">
-            <div class="panel-header">
-                <span>System Parameters</span>
-            </div>
-            <div class="settings-content">
-                <div class="form-group">
-                    <label>Gemini API Key</label>
-                    <input type="password" id="gemini-key" placeholder="Enter Gemini key...">
-                </div>
-                <div class="form-group">
-                    <label>OpenRouter API Key</label>
-                    <input type="password" id="openrouter-key" placeholder="Enter OpenRouter key...">
-                </div>
-                <div class="form-group">
-                    <label>Operating System</label>
-                    <select id="os-select">
-                        <option value="Windows">Windows</option>
-                        <option value="Darwin">macOS</option>
-                        <option value="Linux">Linux</option>
-                    </select>
-                </div>
-                <button class="save-settings-btn" id="save-config-btn">Save Configurations</button>
+            <div class="divider"></div>
+            <div class="section-title">Voice &amp; Speech</div>
+
+            <button class="btn btn-mic" id="voice-btn" title="Hold or click to speak">🎤 Voice Command</button>
+
+            <div class="tts-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="tts-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span>Text-to-Speech (JARVIS voice)</span>
             </div>
 
-            <div class="panel-header" style="border-top: 1px solid var(--border-color);">
-                <span>File Intelligence</span>
+            <div class="divider"></div>
+            <div class="section-title">Quick Stats</div>
+            <div class="mini-stats">
+                <div class="mini-stat"><div class="val" id="qs-time">--:--</div><div class="lbl">Local Time</div></div>
+                <div class="mini-stat"><div class="val" id="qs-day">---</div><div class="lbl">Today</div></div>
+                <div class="mini-stat"><div class="val" id="qs-msgs">0</div><div class="lbl">Messages</div></div>
+                <div class="mini-stat"><div class="val" id="qs-uptime">0m</div><div class="lbl">Session</div></div>
             </div>
-            <div class="upload-panel">
-                <div class="dropzone" id="file-dropzone">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px; color: var(--color-pri);">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-                    </svg>
-                    <div style="font-size: 0.8rem; font-weight: 600;">Upload Reference File</div>
-                    <p>Drop PDF, code, or images here</p>
-                </div>
-                <div class="uploaded-file-info" id="file-info-container">
-                    <span id="file-name-span" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
-                    <button class="file-remove-btn" id="remove-file-btn">Remove</button>
-                </div>
-            </div>
-        </div>
 
-        <!-- Center Panel: The Reactor Core -->
-        <div class="center-column" style="grid-column: 2;">
-            <div class="reactor-container" id="reactor-wrapper">
-                <div class="reactor-core" id="reactor-trigger">
-                    <div class="reactor-outer"></div>
-                    <div class="reactor-inner"></div>
-                    <div class="reactor-center">
-                        <div class="reactor-center-logo" style="background-image: url('/static/face.png');"></div>
-                    </div>
-                </div>
-                <div class="status-badge">
-                    <div class="status-pulse" id="state-pulse"></div>
-                    <span id="state-text">Offline</span>
-                </div>
+            <div class="divider"></div>
+            <div class="section-title">File Intelligence</div>
+            <div class="dropzone" id="file-dropzone">
+                <div>⬆ Upload Reference File</div>
+                <p style="font-size:.65rem;margin-top:4px;">Drop PDF, code, or images</p>
             </div>
-        </div>
-
-        <!-- Right Panel: Terminal Output and Controls -->
-        <div class="glass-panel terminal-panel" style="grid-column: 3;">
-            <div class="panel-header">
-                <span>Active Console Logs</span>
-            </div>
-            <div class="terminal-output" id="logs-container">
-                <div class="log-entry log-sys">SYS: Establishing interface connection...</div>
-            </div>
-            <div class="terminal-input-container">
-                <span class="terminal-input-prefix">JARVIS ></span>
-                <input type="text" class="terminal-input" id="cmd-input" placeholder="Type system command or message..." autocomplete="off">
+            <div class="file-info" id="file-info-container">
+                <span id="file-name-span"></span>
+                <button class="file-remove" id="remove-file-btn">✕ Remove</button>
             </div>
         </div>
     </div>
 
-    <script>
-        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const apiBase = isLocalhost ? '' : 'http://127.0.0.1:8000';
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = isLocalhost 
-            ? `${wsProtocol}//${window.location.host}/ws`
-            : `ws://127.0.0.1:8000/ws`;
-        let ws;
+    <!-- CENTER -->
+    <div class="center-col">
+        <div class="reactor-wrap" id="reactor-wrapper">
+            <div class="reactor-core" id="reactor-trigger">
+                <div class="ring ring-1"></div>
+                <div class="ring ring-2"></div>
+                <div class="ring ring-3"></div>
+                <div class="reactor-glow"></div>
+                <div class="reactor-face"></div>
+            </div>
+            <div class="status-badge">
+                <div class="status-pulse" id="state-pulse"></div>
+                <span id="state-text">OFFLINE</span>
+            </div>
+            <div class="waveform" id="waveform">
+                <!-- bars injected by JS -->
+            </div>
+        </div>
+    </div>
 
-        const logsContainer = document.getElementById('logs-container');
-        const cmdInput = document.getElementById('cmd-input');
-        const stateText = document.getElementById('state-text');
-        const reactorWrapper = document.getElementById('reactor-wrapper');
-        const statePulse = document.getElementById('state-pulse');
-        const cpuVal = document.getElementById('cpu-val');
-        const ramVal = document.getElementById('ram-val');
-        const netVal = document.getElementById('net-val');
+    <!-- RIGHT PANEL -->
+    <div class="glass-panel terminal-panel">
+        <div class="panel-header">
+            <span>Active Console</span>
+            <button onclick="clearLogs()" style="background:transparent;border:1px solid var(--border);color:var(--dim);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:.65rem;">CLEAR</button>
+        </div>
+        <div class="terminal-output" id="logs-container">
+            <div class="log-entry log-sys">SYS: J.A.R.V.I.S Arc Reactor v2 initializing...</div>
+        </div>
+        <div class="terminal-input-wrap">
+            <span class="terminal-prefix">JARVIS &gt;</span>
+            <input type="text" class="terminal-input" id="cmd-input" placeholder="Type command or question..." autocomplete="off">
+            <button class="mic-btn" id="mic-inline-btn" title="Voice input">🎤</button>
+        </div>
+    </div>
 
-        // Config Elements
-        const geminiKeyInput = document.getElementById('gemini-key');
-        const openrouterKeyInput = document.getElementById('openrouter-key');
-        const osSelect = document.getElementById('os-select');
-        const saveConfigBtn = document.getElementById('save-config-btn');
+</div>
 
-        // Dropzone Elements
-        const dropzone = document.getElementById('file-dropzone');
-        const fileInfoContainer = document.getElementById('file-info-container');
-        const fileNameSpan = document.getElementById('file-name-span');
-        const removeFileBtn = document.getElementById('remove-file-btn');
+<script>
+// ═══════════════════════════════════════════════
+//  PARTICLES BACKGROUND
+// ═══════════════════════════════════════════════
+(function(){
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
 
-        function appendLog(text) {
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            
-            if (text.startsWith('You:')) {
-                entry.classList.add('log-user');
-            } else if (text.startsWith('Jarvis:')) {
-                entry.classList.add('log-jarvis');
-            } else if (text.startsWith('SYS:')) {
-                entry.classList.add('log-sys');
-            } else if (text.startsWith('[JARVIS]') || text.startsWith('📞')) {
-                entry.classList.add('log-tool');
-            } else {
-                entry.classList.add('log-sys');
+    function resize(){
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    for(let i=0;i<70;i++){
+        particles.push({
+            x: Math.random()*1920, y: Math.random()*1080,
+            vx: (Math.random()-.5)*.3, vy: (Math.random()-.5)*.3,
+            r: Math.random()*1.5+.5, a: Math.random()
+        });
+    }
+
+    function draw(){
+        ctx.clearRect(0,0,W,H);
+        particles.forEach(p=>{
+            p.x += p.vx; p.y += p.vy;
+            if(p.x<0) p.x=W; if(p.x>W) p.x=0;
+            if(p.y<0) p.y=H; if(p.y>H) p.y=0;
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+            ctx.fillStyle = `rgba(0,212,255,${p.a*.3})`;
+            ctx.fill();
+        });
+        // draw connections
+        for(let i=0;i<particles.length;i++){
+            for(let j=i+1;j<particles.length;j++){
+                const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+                const dist=Math.sqrt(dx*dx+dy*dy);
+                if(dist<120){
+                    ctx.beginPath();
+                    ctx.strokeStyle=`rgba(0,212,255,${(1-dist/120)*.06})`;
+                    ctx.lineWidth=.5;
+                    ctx.moveTo(particles[i].x,particles[i].y);
+                    ctx.lineTo(particles[j].x,particles[j].y);
+                    ctx.stroke();
+                }
             }
-
-            entry.textContent = text;
-            logsContainer.appendChild(entry);
-            logsContainer.scrollTop = logsContainer.scrollHeight;
         }
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
 
-        function setSystemState(state) {
-            reactorWrapper.className = `reactor-container state-${state}`;
-            stateText.textContent = state;
-            
-            // Adjust pulse color dynamically
-            if (state === 'LISTENING') {
-                statePulse.style.backgroundColor = 'var(--color-pri)';
-                statePulse.style.boxShadow = '0 0 10px var(--color-pri)';
-            } else if (state === 'THINKING') {
-                statePulse.style.backgroundColor = 'var(--color-sec)';
-                statePulse.style.boxShadow = '0 0 10px var(--color-sec)';
-            } else if (state === 'SPEAKING') {
-                statePulse.style.backgroundColor = 'var(--color-green)';
-                statePulse.style.boxShadow = '0 0 10px var(--color-green)';
-            } else {
-                statePulse.style.backgroundColor = '#666';
-                statePulse.style.boxShadow = 'none';
+// ═══════════════════════════════════════════════
+//  WAVEFORM BARS
+// ═══════════════════════════════════════════════
+const waveformEl = document.getElementById('waveform');
+const BARS = 18;
+for(let i=0;i<BARS;i++){
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    bar.style.height = '4px';
+    waveformEl.appendChild(bar);
+}
+function animateWave(active){
+    const bars = waveformEl.querySelectorAll('.wave-bar');
+    bars.forEach(b => {
+        const h = active ? (Math.random()*22+4) : 4;
+        b.style.height = h+'px';
+    });
+}
+let waveInterval = null;
+function startWave(){ waveInterval = setInterval(()=>animateWave(true),100); }
+function stopWave(){ clearInterval(waveInterval); animateWave(false); }
+
+// ═══════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════
+const sessionStart = Date.now();
+const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function updateClock(){
+    const now = new Date();
+    document.getElementById('live-clock').textContent = now.toLocaleTimeString('en-US',{hour12:false});
+    document.getElementById('qs-time').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+    document.getElementById('qs-day').textContent = days[now.getDay()];
+    const up = Math.floor((Date.now()-sessionStart)/60000);
+    document.getElementById('qs-uptime').textContent = up >= 60 ? `${Math.floor(up/60)}h${up%60}m` : `${up}m`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══════════════════════════════════════════════
+//  STATE MANAGEMENT
+// ═══════════════════════════════════════════════
+let currentState = 'OFFLINE';
+function setSystemState(state){
+    currentState = state;
+    const wrap = document.getElementById('reactor-wrapper');
+    wrap.className = `reactor-wrap state-${state}`;
+    document.getElementById('state-text').textContent = state;
+    const pulse = document.getElementById('state-pulse');
+    const colors = {LISTENING:'var(--pri)',THINKING:'var(--sec)',SPEAKING:'var(--green)',OFFLINE:'#555'};
+    pulse.style.background = colors[state] || '#555';
+    pulse.style.boxShadow = state!=='OFFLINE' ? `0 0 10px ${colors[state]}` : 'none';
+
+    if(state==='SPEAKING') startWave();
+    else stopWave();
+}
+
+// ═══════════════════════════════════════════════
+//  LOGGING
+// ═══════════════════════════════════════════════
+let msgCount = 0;
+function appendLog(text, cls){
+    const logs = document.getElementById('logs-container');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    if(cls) entry.classList.add(cls);
+    else if(text.startsWith('You:')) entry.classList.add('log-user');
+    else if(text.startsWith('JARVIS:')) entry.classList.add('log-jarvis');
+    else if(text.startsWith('SYS:')) entry.classList.add('log-sys');
+    else if(text.startsWith('ERR:')) entry.classList.add('log-err');
+    else entry.classList.add('log-sys');
+    entry.textContent = text;
+    logs.appendChild(entry);
+    logs.scrollTop = logs.scrollHeight;
+    return entry;
+}
+function clearLogs(){
+    document.getElementById('logs-container').innerHTML = '';
+    appendLog('SYS: Console cleared.');
+}
+function showTyping(){
+    const logs = document.getElementById('logs-container');
+    const el = document.createElement('div');
+    el.className = 'log-entry log-typing typing-dots';
+    el.id = 'typing-indicator';
+    el.innerHTML = 'JARVIS: <span>●</span><span>●</span><span>●</span>';
+    logs.appendChild(el);
+    logs.scrollTop = logs.scrollHeight;
+}
+function hideTyping(){
+    const el = document.getElementById('typing-indicator');
+    if(el) el.remove();
+}
+
+// ═══════════════════════════════════════════════
+//  TEXT TO SPEECH
+// ═══════════════════════════════════════════════
+let ttsEnabled = true;
+document.getElementById('tts-toggle').addEventListener('change', e => { ttsEnabled = e.target.checked; });
+
+function speak(text){
+    if(!ttsEnabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    // Find a deep male voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => /google uk english male|david|mark|daniel/i.test(v.name)) || voices[0];
+    if(preferred) utt.voice = preferred;
+    utt.rate = 0.92;
+    utt.pitch = 0.85;
+    utt.volume = 1;
+    utt.onstart = () => setSystemState('SPEAKING');
+    utt.onend = () => setSystemState(ws && ws.readyState===1 ? 'LISTENING' : 'LISTENING');
+    window.speechSynthesis.speak(utt);
+}
+
+// ═══════════════════════════════════════════════
+//  STANDALONE BUILT-IN COMMANDS
+// ═══════════════════════════════════════════════
+function handleBuiltinCommand(text){
+    const t = text.toLowerCase().trim();
+    const now = new Date();
+
+    if(/^(time|what time|current time)/.test(t)){
+        const r = `Current time is ${now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}, sir.`;
+        appendLog(`JARVIS: ${r}`, 'log-jarvis'); speak(r); return true;
+    }
+    if(/^(date|today|what day|current date)/.test(t)){
+        const r = `Today is ${now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}, sir.`;
+        appendLog(`JARVIS: ${r}`, 'log-jarvis'); speak(r); return true;
+    }
+    if(/^(clear|cls|clear console)/.test(t)){
+        clearLogs(); return true;
+    }
+    if(/^(hello|hi|hey jarvis|good morning|good evening|good afternoon)/.test(t)){
+        const greets = [
+            "Good day, sir. All systems are online and ready.",
+            "Hello. How may I assist you today?",
+            "At your service. What do you need?",
+            "Systems nominal. Ready for your command, sir."
+        ];
+        const r = greets[Math.floor(Math.random()*greets.length)];
+        appendLog(`JARVIS: ${r}`, 'log-jarvis'); speak(r); return true;
+    }
+    if(/^(who are you|what are you|introduce yourself)/.test(t)){
+        const r = "I am JARVIS — Just A Rather Very Intelligent System. I am your AI assistant, designed to help you with information, analysis, and system control, sir.";
+        appendLog(`JARVIS: ${r}`, 'log-jarvis'); speak(r); return true;
+    }
+    if(/^calc(ulate)?/.test(t) || /[\d\+\-\*\/\(\)^]+/.test(t) && t.length<50 && !/[a-z]{4,}/.test(t)){
+        try{
+            const expr = t.replace(/calc(ulate)?/i,'').replace(/[^0-9+\-*/().\s]/g,'').trim();
+            if(expr){
+                // eslint-disable-next-line no-eval
+                const result = Function('"use strict";return ('+expr+')')();
+                const r = `The result of ${expr} is ${result}, sir.`;
+                appendLog(`JARVIS: ${r}`, 'log-jarvis'); speak(r); return true;
             }
-        }
+        }catch(e){}
+    }
+    if(/^(status|system status|diagnostics)/.test(t)){
+        const r = `System status: All modules operational. Session uptime ${document.getElementById('qs-uptime').textContent}. Messages processed: ${msgCount}. ${ws && ws.readyState===1 ? 'Backend server connected.' : 'Operating in standalone AI mode.'}`;
+        appendLog(`JARVIS: ${r}`, 'log-jarvis'); speak(r); return true;
+    }
+    if(/^(stop|silence|shut up|stop talking|cancel)/.test(t)){
+        window.speechSynthesis && window.speechSynthesis.cancel();
+        const r = "Understood, sir.";
+        appendLog(`JARVIS: ${r}`, 'log-jarvis'); return true;
+    }
+    if(/^(help|commands|what can you do)/.test(t)){
+        appendLog('JARVIS: Built-in commands: time, date, status, calculate [expr], clear, hello, who are you, stop. For anything else, I use Gemini AI — just type naturally!', 'log-jarvis');
+        speak("I support built-in commands for time, date, status, and calculations. For anything else, I use Gemini AI. Just speak or type naturally, sir.");
+        return true;
+    }
+    return false;
+}
 
-        function connectWebSocket() {
-            ws = new WebSocket(wsUrl);
-
-            ws.onopen = () => {
-                appendLog('SYS: Holographic display link online.');
-                setSystemState('LISTENING');
-            };
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                
-                if (data.type === 'log') {
-                    appendLog(data.text);
-                } else if (data.type === 'state') {
-                    setSystemState(data.state);
-                } else if (data.type === 'metrics') {
-                    cpuVal.textContent = `${data.cpu.toFixed(1)}%`;
-                    ramVal.textContent = `${data.mem.toFixed(1)}%`;
-                    netVal.textContent = `${data.net.toFixed(2)} MB/s`;
-                } else if (data.type === 'config') {
-                    geminiKeyInput.value = data.gemini_api_key || '';
-                    openrouterKeyInput.value = data.openrouter_api_key || '';
-                    osSelect.value = data.os_system || 'Windows';
-                }
-            };
-
-            ws.onclose = () => {
-                appendLog('SYS: Disconnected. Reconnecting in 3s...');
-                setSystemState('OFFLINE');
-                setTimeout(connectWebSocket, 3000);
-            };
-
-            ws.onerror = () => {
-                setSystemState('OFFLINE');
-                if (window.location.protocol === 'https:') {
-                    appendLog('SYS: Connection failed. Since this page is loaded over HTTPS, your browser may be blocking the connection to the local insecure WebSocket (ws://127.0.0.1:8000). Please configure your browser to "Allow insecure content" for this site, or run the dashboard locally at http://localhost:8000.');
-                } else {
-                    appendLog('SYS: Connection failed. Ensure your local Python server is running on http://127.0.0.1:8000.');
-                }
-            };
-        }
-
-        // Send Command
-        cmdInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const val = cmdInput.value.trim();
-                if (val && ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'command', text: val }));
-                    cmdInput.value = '';
-                }
-            }
-        });
-
-        // Save Config
-        saveConfigBtn.addEventListener('click', () => {
-            const gemini = geminiKeyInput.value.trim();
-            const openrouter = openrouterKeyInput.value.trim();
-            const os = osSelect.value;
-            
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'save_config',
-                    gemini_api_key: gemini,
-                    openrouter_api_key: openrouter,
-                    os_system: os
-                }));
-                appendLog('SYS: Configuration parameters saved.');
-            }
-        });
-
-        // Drag and drop / File Upload
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('dragover');
-        });
-
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.classList.remove('dragover');
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('dragover');
-            
-            if (e.dataTransfer.files.length > 0) {
-                uploadFile(e.dataTransfer.files[0]);
-            }
-        });
-
-        dropzone.addEventListener('click', () => {
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.onchange = () => {
-                if (fileInput.files.length > 0) {
-                    uploadFile(fileInput.files[0]);
-                }
-            };
-            fileInput.click();
-        });
-
-        function uploadFile(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            appendLog(`SYS: Uploading file "${file.name}"...`);
-
-            fetch(`${apiBase}/upload`, {
-                method: 'POST',
-                body: formData
+// ═══════════════════════════════════════════════
+//  GEMINI AI (STANDALONE — NO BACKEND NEEDED)
+// ═══════════════════════════════════════════════
+async function askGemini(userText){
+    const key = document.getElementById('gemini-key').value.trim();
+    if(!key){
+        appendLog('SYS: No Gemini API key set. Enter your key in System Parameters to enable AI responses.', 'log-err');
+        speak("Please enter your Gemini API key in the System Parameters panel to enable AI, sir.");
+        return;
+    }
+    setSystemState('THINKING');
+    showTyping();
+    try{
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                system_instruction:{parts:[{text:"You are JARVIS, Tony Stark's highly intelligent AI assistant. Be concise, precise, and occasionally witty. Address the user as 'sir'. Keep responses under 3 sentences unless detail is required."}]},
+                contents:[{role:'user',parts:[{text:userText}]}],
+                generationConfig:{temperature:.8,maxOutputTokens:400}
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    appendLog(`SYS: Upload complete. Loaded "${file.name}".`);
-                    fileNameSpan.textContent = file.name;
-                    fileInfoContainer.style.display = 'flex';
-                } else {
-                    appendLog(`SYS: Error loading file: ${data.message}`);
-                }
-            })
-            .catch(err => {
-                appendLog(`SYS: Upload failure: ${err.message}`);
-            });
-        }
-
-        removeFileBtn.addEventListener('click', () => {
-            fetch(`${apiBase}/remove-file`, { method: 'POST' })
-            .then(() => {
-                appendLog('SYS: Reference file detached.');
-                fileInfoContainer.style.display = 'none';
-                fileNameSpan.textContent = '';
-            });
         });
+        const data = await res.json();
+        if(data.error){ throw new Error(data.error.message); }
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I was unable to process that request, sir.";
+        hideTyping();
+        appendLog(`JARVIS: ${reply}`, 'log-jarvis');
+        speak(reply);
+        setSystemState('LISTENING');
+    }catch(e){
+        hideTyping();
+        appendLog(`ERR: Gemini API error — ${e.message}`, 'log-err');
+        speak("I encountered an API error, sir. Please check your Gemini key.");
+        setSystemState('LISTENING');
+    }
+}
 
-        connectWebSocket();
-    </script>
+// ═══════════════════════════════════════════════
+//  COMMAND DISPATCH
+// ═══════════════════════════════════════════════
+function processCommand(text){
+    if(!text.trim()) return;
+    msgCount++;
+    document.getElementById('qs-msgs').textContent = msgCount;
+    appendLog(`You: ${text}`, 'log-user');
+
+    // If WebSocket backend is connected, send there first
+    if(ws && ws.readyState === WebSocket.OPEN){
+        ws.send(JSON.stringify({type:'command', text}));
+        return;
+    }
+
+    // Standalone: try built-in commands first, then Gemini AI
+    if(!handleBuiltinCommand(text)){
+        askGemini(text);
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  TERMINAL INPUT
+// ═══════════════════════════════════════════════
+const cmdInput = document.getElementById('cmd-input');
+cmdInput.addEventListener('keydown', e => {
+    if(e.key==='Enter'){
+        const val = cmdInput.value.trim();
+        if(val){ processCommand(val); cmdInput.value = ''; }
+    }
+});
+
+// ═══════════════════════════════════════════════
+//  VOICE RECOGNITION (Web Speech API)
+// ═══════════════════════════════════════════════
+let recognition = null;
+let isListening = false;
+
+function setupVoice(){
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SpeechRecognition){ appendLog('SYS: Voice recognition not supported in this browser.','log-err'); return; }
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = e => {
+        const transcript = e.results[0][0].transcript;
+        cmdInput.value = transcript;
+        appendLog(`SYS: Voice captured: "${transcript}"`,'log-sys');
+        processCommand(transcript);
+        cmdInput.value = '';
+        stopVoice();
+    };
+    recognition.onerror = e => {
+        appendLog(`ERR: Voice error — ${e.error}`,'log-err');
+        stopVoice();
+    };
+    recognition.onend = () => stopVoice();
+}
+
+function startVoice(){
+    if(!recognition) setupVoice();
+    if(!recognition) return;
+    if(isListening) return;
+    isListening = true;
+    recognition.start();
+    appendLog('SYS: Microphone active — speak now...','log-sys');
+    document.getElementById('voice-btn').classList.add('active');
+    document.getElementById('voice-btn').textContent = '🔴 Listening...';
+    document.getElementById('mic-inline-btn').classList.add('listening');
+    document.getElementById('mic-inline-btn').textContent = '⏹';
+    setSystemState('LISTENING');
+}
+
+function stopVoice(){
+    isListening = false;
+    try{ recognition && recognition.stop(); }catch(e){}
+    document.getElementById('voice-btn').classList.remove('active');
+    document.getElementById('voice-btn').textContent = '🎤 Voice Command';
+    document.getElementById('mic-inline-btn').classList.remove('listening');
+    document.getElementById('mic-inline-btn').textContent = '🎤';
+}
+
+document.getElementById('voice-btn').addEventListener('click', () => {
+    if(isListening) stopVoice(); else startVoice();
+});
+document.getElementById('mic-inline-btn').addEventListener('click', () => {
+    if(isListening) stopVoice(); else startVoice();
+});
+
+// ═══════════════════════════════════════════════
+//  WEBSOCKET (local server optional)
+// ═══════════════════════════════════════════════
+const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1';
+const apiBase = isLocal ? '' : 'http://127.0.0.1:8000';
+const wsUrl   = isLocal ? `ws://${location.host}/ws` : 'ws://127.0.0.1:8000/ws';
+let ws = null;
+let wsRetry = null;
+const modeBadge = document.getElementById('mode-badge');
+
+function setMode(mode){
+    modeBadge.className = 'mode-badge';
+    if(mode==='ws')      { modeBadge.classList.add('mode-ws'); modeBadge.textContent='CONNECTED'; }
+    else if(mode==='ai') { modeBadge.classList.add('mode-ai'); modeBadge.textContent='AI MODE'; }
+    else                 { modeBadge.classList.add('mode-off'); modeBadge.textContent='OFFLINE'; }
+}
+
+function connectWebSocket(){
+    try{
+        ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+            appendLog('SYS: Backend server connected. Full system online.','log-sys');
+            setSystemState('LISTENING');
+            setMode('ws');
+            clearTimeout(wsRetry);
+            // speak("Connection established. JARVIS online, sir.");
+        };
+        ws.onmessage = e => {
+            const d = JSON.parse(e.data);
+            if(d.type==='log')     appendLog(d.text);
+            else if(d.type==='state') setSystemState(d.state);
+            else if(d.type==='metrics'){
+                document.getElementById('cpu-val').textContent = d.cpu.toFixed(1)+'%';
+                document.getElementById('ram-val').textContent = d.mem.toFixed(1)+'%';
+                document.getElementById('net-val').textContent = d.net.toFixed(2)+' MB/s';
+            } else if(d.type==='config'){
+                document.getElementById('gemini-key').value = d.gemini_api_key||'';
+                document.getElementById('openrouter-key').value = d.openrouter_api_key||'';
+                document.getElementById('os-select').value = d.os_system||'Windows';
+            }
+        };
+        ws.onclose = () => {
+            setMode('ai');
+            setSystemState('LISTENING');
+            appendLog('SYS: Backend offline. Switched to standalone Gemini AI mode.','log-sys');
+            wsRetry = setTimeout(connectWebSocket, 5000);
+        };
+        ws.onerror = () => {
+            setMode('ai');
+            if(location.protocol==='https:'){
+                appendLog('SYS: Backend blocked (HTTPS mixed-content). Running in standalone AI mode. Enter your Gemini key to activate.','log-sys');
+            }
+        };
+    }catch(e){
+        setMode('ai');
+    }
+}
+
+// Save Config — works for both local server and standalone
+document.getElementById('save-config-btn').addEventListener('click', () => {
+    const gemini = document.getElementById('gemini-key').value.trim();
+    const openrouter = document.getElementById('openrouter-key').value.trim();
+    const os = document.getElementById('os-select').value;
+
+    // Save locally for standalone use
+    if(gemini) { localStorage.setItem('jarvis_gemini_key', gemini); }
+    if(openrouter) { localStorage.setItem('jarvis_openrouter_key', openrouter); }
+
+    if(ws && ws.readyState===WebSocket.OPEN){
+        ws.send(JSON.stringify({type:'save_config', gemini_api_key:gemini, openrouter_api_key:openrouter, os_system:os}));
+        appendLog('SYS: Configuration saved to server and local storage.','log-sys');
+    } else {
+        appendLog('SYS: Configuration saved locally. Gemini AI mode active.','log-sys');
+        if(gemini){
+            setMode('ai');
+            setSystemState('LISTENING');
+            speak("Configuration saved. Gemini AI mode active. Ready for your commands, sir.");
+        }
+    }
+});
+
+// ═══════════════════════════════════════════════
+//  RESTORE SAVED KEYS FROM LOCALSTORAGE
+// ═══════════════════════════════════════════════
+(function restoreKeys(){
+    const gKey = localStorage.getItem('jarvis_gemini_key');
+    const oKey = localStorage.getItem('jarvis_openrouter_key');
+    if(gKey){ document.getElementById('gemini-key').value = gKey; setMode('ai'); }
+    if(oKey){ document.getElementById('openrouter-key').value = oKey; }
+})();
+
+// ═══════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════
+const dropzone = document.getElementById('file-dropzone');
+const fileInfoContainer = document.getElementById('file-info-container');
+const fileNameSpan = document.getElementById('file-name-span');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+    e.preventDefault(); dropzone.classList.remove('dragover');
+    if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+});
+dropzone.addEventListener('click', () => {
+    const fi = document.createElement('input'); fi.type='file';
+    fi.onchange = () => { if(fi.files[0]) uploadFile(fi.files[0]); };
+    fi.click();
+});
+
+function uploadFile(file){
+    appendLog(`SYS: Loading "${file.name}"...`,'log-sys');
+    if(ws && ws.readyState===WebSocket.OPEN){
+        const fd = new FormData(); fd.append('file', file);
+        fetch(`${apiBase}/upload`,{method:'POST',body:fd})
+        .then(r=>r.json()).then(d=>{
+            if(d.status==='success'){
+                appendLog(`SYS: File "${file.name}" loaded for analysis.`,'log-sys');
+                fileNameSpan.textContent = file.name;
+                fileInfoContainer.style.display = 'flex';
+            } else appendLog(`ERR: ${d.message}`,'log-err');
+        }).catch(e=>appendLog(`ERR: Upload failed — ${e.message}`,'log-err'));
+    } else {
+        // Standalone: read file and include in AI context
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const content = ev.target.result.substring(0,8000);
+            localStorage.setItem('jarvis_file_context', content);
+            localStorage.setItem('jarvis_file_name', file.name);
+            appendLog(`SYS: File "${file.name}" loaded for AI analysis.`,'log-sys');
+            fileNameSpan.textContent = file.name;
+            fileInfoContainer.style.display = 'flex';
+        };
+        reader.readAsText(file);
+    }
+}
+
+document.getElementById('remove-file-btn').addEventListener('click', () => {
+    localStorage.removeItem('jarvis_file_context');
+    localStorage.removeItem('jarvis_file_name');
+    fileInfoContainer.style.display='none';
+    fileNameSpan.textContent='';
+    appendLog('SYS: Reference file detached.','log-sys');
+    if(ws && ws.readyState===WebSocket.OPEN){
+        fetch(`${apiBase}/remove-file`,{method:'POST'});
+    }
+});
+
+// ═══════════════════════════════════════════════
+//  REACTOR CLICK = START VOICE
+// ═══════════════════════════════════════════════
+document.getElementById('reactor-trigger').addEventListener('click', () => {
+    if(isListening) stopVoice(); else startVoice();
+});
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+appendLog('SYS: Attempting backend connection...','log-sys');
+connectWebSocket();
+
+// After 2s, if no WS connection, show AI mode ready message
+setTimeout(()=>{
+    if(!ws || ws.readyState!==WebSocket.OPEN){
+        const hasKey = document.getElementById('gemini-key').value.trim();
+        setMode(hasKey ? 'ai' : 'off');
+        setSystemState('LISTENING');
+        if(hasKey){
+            appendLog('SYS: Gemini AI mode active. Type or speak any command.','log-sys');
+        } else {
+            appendLog('SYS: Standalone mode. Enter Gemini API key for AI or connect local backend.','log-sys');
+        }
+    }
+}, 2000);
+
+// Load voices after page load for TTS
+window.speechSynthesis && window.speechSynthesis.getVoices();
+window.speechSynthesis && window.speechSynthesis.addEventListener && window.speechSynthesis.addEventListener('voiceschanged', ()=>window.speechSynthesis.getVoices());
+</script>
 </body>
 </html>
