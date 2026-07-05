@@ -2,6 +2,8 @@ import asyncio
 import json
 import os
 import sys
+import warnings
+warnings.filterwarnings("ignore")
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
