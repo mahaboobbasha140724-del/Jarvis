@@ -2,13 +2,9 @@
   "version": 2,
   "framework": null,
   "buildCommand": "",
-  "outputDirectory": "templates",
+  "outputDirectory": ".",
   "cleanUrls": true,
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/../static/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "/index.html"
