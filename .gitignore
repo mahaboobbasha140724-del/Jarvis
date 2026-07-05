@@ -12,7 +12,6 @@ memory/long_term.json
 *.log
 .DS_Store
 Thumbs.db
-static/
 uploads/
 stock_report_*.md
 
