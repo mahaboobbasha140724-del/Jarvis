@@ -1,0 +1,19 @@
+# Exclude python files and backend folders from Vercel static build
+main.py
+web_main.py
+setup.py
+requirements.txt
+venv/
+actions/
+agent/
+config/
+core/
+memory/
+or_client.py
+ui.py
+.git
+.gitignore
+README.md
+readme.md
+stock_report_AAPL.md
+face.png
