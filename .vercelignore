@@ -1,19 +1,26 @@
-# Exclude python files and backend folders from Vercel static build
+# Exclude everything except templates/ and static/
+# This forces a pure static site build with no Python runtime
+
 main.py
 web_main.py
 setup.py
+ui.py
+or_client.py
 requirements.txt
-venv/
+*.py
+
 actions/
 agent/
 config/
 core/
 memory/
-or_client.py
-ui.py
-.git
-.gitignore
+
+__pycache__/
+venv/
+uploads/
+.git/
+
 README.md
 readme.md
-stock_report_AAPL.md
+*.md
 face.png
