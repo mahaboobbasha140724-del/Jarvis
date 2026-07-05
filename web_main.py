@@ -211,7 +211,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 openrouter = payload.get("openrouter_api_key", "").strip()
                 os_name = payload.get("os_system", "Windows").strip()
                 
-                main.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+                main.API_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
                 with open(main.API_CONFIG_PATH, "w", encoding="utf-8") as f:
                     json.dump({
                         "gemini_api_key": gemini,

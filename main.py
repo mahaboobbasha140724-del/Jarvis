@@ -31,6 +31,7 @@ from actions.dev_agent         import dev_agent
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
+from actions.stock_analyzer    import stock_analyzer
 
 
 def get_base_dir():
@@ -489,6 +490,23 @@ TOOL_DECLARATIONS = [
             "required": ["category", "key", "value"]
         }
     },
+    {
+        "name": "stock_analyzer",
+        "description": (
+            "Performs a comprehensive fundamental and technical stock market analysis "
+            "for a given ticker symbol (e.g. AAPL, TSLA, MSFT). Generates a structured report."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "ticker": {
+                    "type": "STRING",
+                    "description": "Stock ticker symbol (e.g. AAPL, TSLA, MSFT, RELIANCE.NS)"
+                }
+            },
+            "required": ["ticker"]
+        }
+    },
 ]
 
 
@@ -678,6 +696,10 @@ class JarvisLive:
 
             elif name == "game_updater":
                 r = await loop.run_in_executor(None, lambda: game_updater(parameters=args, player=self.ui, speak=self.speak))
+                result = r or "Done."
+
+            elif name == "stock_analyzer":
+                r = await loop.run_in_executor(None, lambda: stock_analyzer(parameters=args, player=self.ui))
                 result = r or "Done."
 
             elif name == "flight_finder":
