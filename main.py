@@ -2,6 +2,9 @@ import asyncio
 import threading
 import json
 import sys
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 import traceback
 from pathlib import Path
 
@@ -852,13 +855,12 @@ class JarvisLive:
             stream.close()
 
     async def run(self):
-        client = genai.Client(
-            api_key=_get_api_key(),
-            http_options={"api_version": "v1beta"}
-        )
-
         while True:
             try:
+                client = genai.Client(
+                    api_key=_get_api_key(),
+                    http_options={"api_version": "v1beta"}
+                )
                 print("[JARVIS] 🔌 Connecting...")
                 self.ui.set_state("THINKING")
                 config = self._build_config()
@@ -884,6 +886,7 @@ class JarvisLive:
             except Exception as e:
                 print(f"[JARVIS] ⚠️ {e}")
                 traceback.print_exc()
+                self.ui.write_log(f"SYS: Connection error: {e}")
 
             self.set_speaking(False)
             self.ui.set_state("THINKING")

@@ -2,6 +2,9 @@ import asyncio
 import json
 import os
 import sys
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 import threading
 import time
 from pathlib import Path
@@ -34,6 +37,7 @@ class WebJarvisUI:
         self._current_file_path = None
         self.state = "OFFLINE"
         self.logs_history = []
+        self.loop = None
 
         # Check if config exists on startup
         if self._check_api_keys():
@@ -97,24 +101,27 @@ class WebJarvisUI:
         if not active_connections:
             return
         
-        # Create a new event loop or use global loop to send async broadcast from synchronous callback
         msg = json.dumps(data)
         async def send_to_all():
             for websocket in list(active_connections):
                 try:
                     await websocket.send_text(msg)
                 except Exception:
-                    active_connections.remove(websocket)
+                    if websocket in active_connections:
+                        active_connections.remove(websocket)
         
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(send_to_all())
-            else:
-                asyncio.run(send_to_all())
-        except Exception:
-            # Fallback to run in a separate thread if no event loop in current context
-            threading.Thread(target=lambda: asyncio.run(send_to_all()), daemon=True).start()
+        if self.loop and self.loop.is_running():
+            asyncio.run_coroutine_threadsafe(send_to_all(), self.loop)
+        else:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(send_to_all())
+                else:
+                    asyncio.run(send_to_all())
+            except Exception:
+                # Fallback to run in a separate thread if no event loop in current context
+                threading.Thread(target=lambda: asyncio.run(send_to_all()), daemon=True).start()
 
 # Global UI Instance
 ui_instance = WebJarvisUI()
@@ -258,6 +265,7 @@ async def broadcast_metrics_loop():
 # Start metrics loop in event loop
 @app.on_event("startup")
 async def startup_event():
+    ui_instance.loop = asyncio.get_running_loop()
     asyncio.create_task(broadcast_metrics_loop())
 
 def run_jarvis_engine():

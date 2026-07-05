@@ -672,6 +672,11 @@
 
             ws.onerror = () => {
                 setSystemState('OFFLINE');
+                if (window.location.protocol === 'https:') {
+                    appendLog('SYS: Connection failed. Since this page is loaded over HTTPS, your browser may be blocking the connection to the local insecure WebSocket (ws://127.0.0.1:8000). Please configure your browser to "Allow insecure content" for this site, or run the dashboard locally at http://localhost:8000.');
+                } else {
+                    appendLog('SYS: Connection failed. Ensure your local Python server is running on http://127.0.0.1:8000.');
+                }
             };
         }
 
