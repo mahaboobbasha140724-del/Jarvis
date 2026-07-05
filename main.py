@@ -35,6 +35,8 @@ from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
 from actions.stock_analyzer    import stock_analyzer
+from actions.shell_executor    import shell_executor
+from actions.dhan_trader       import dhan_trader
 
 
 def get_base_dir():
@@ -496,18 +498,105 @@ TOOL_DECLARATIONS = [
     {
         "name": "stock_analyzer",
         "description": (
-            "Performs a comprehensive fundamental and technical stock market analysis "
-            "for a given ticker symbol (e.g. AAPL, TSLA, MSFT). Generates a structured report."
+            "Performs comprehensive fundamental and technical stock market analysis. "
+            "Supports Indian NSE/BSE stocks (RELIANCE, TCS, INFY, SBIN, ADANIENT etc.) "
+            "and US stocks (AAPL, TSLA, MSFT, GOOGL etc.). "
+            "Auto-detects Indian tickers and appends .NS suffix. "
+            "Shows price in ₹ for Indian stocks, $ for US stocks. "
+            "ALWAYS call this for any stock analysis request."
         ),
         "parameters": {
             "type": "OBJECT",
             "properties": {
                 "ticker": {
                     "type": "STRING",
-                    "description": "Stock ticker symbol (e.g. AAPL, TSLA, MSFT, RELIANCE.NS)"
+                    "description": "Stock ticker (RELIANCE, TCS, INFY, AAPL, TSLA, NIFTY50, SENSEX etc.)"
                 }
             },
             "required": ["ticker"]
+        }
+    },
+    {
+        "name": "run_command",
+        "description": (
+            "Executes any terminal or shell command on the PC and returns the output. "
+            "Use for: running programs, checking system info, installing packages, "
+            "creating/deleting files via command line, network commands (ipconfig, ping, netstat), "
+            "system commands (tasklist, systeminfo, dir, ls, diskpart), "
+            "running Python/batch/PowerShell scripts, git commands, npm, pip, etc. "
+            "ALWAYS use this for any request involving running a command, script, or terminal operation. "
+            "NEVER simulate or pretend to run commands — always call this tool."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "command": {
+                    "type": "STRING",
+                    "description": "The exact command to run (e.g. 'ipconfig', 'pip install requests', 'git status', 'python script.py')"
+                },
+                "shell": {
+                    "type": "STRING",
+                    "description": "Shell to use: powershell (default on Windows) | cmd | auto"
+                },
+                "cwd": {
+                    "type": "STRING",
+                    "description": "Working directory for the command (optional, defaults to user home)"
+                },
+                "timeout": {
+                    "type": "INTEGER",
+                    "description": "Timeout in seconds (default: 30)"
+                }
+            },
+            "required": ["command"]
+        }
+    },
+    {
+        "name": "dhan_trade",
+        "description": (
+            "Dhan brokerage integration for Indian stock trading. "
+            "Use for: buying/selling stocks on NSE, viewing portfolio/positions, "
+            "checking holdings (long-term CNC), live NSE price quotes, order history, order status. "
+            "Supported stocks: RELIANCE, TCS, INFY, HDFCBANK, ICICIBANK, SBIN, and 60+ more NSE stocks. "
+            "Always asks for confirmation before placing buy/sell orders (safety gate). "
+            "Requires Dhan Client ID and Access Token configured in Settings."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "description": "buy | sell | portfolio | holdings | market_quote | order_history | order_status"
+                },
+                "symbol": {
+                    "type": "STRING",
+                    "description": "NSE stock ticker (e.g. RELIANCE, TCS, INFY, HDFCBANK)"
+                },
+                "quantity": {
+                    "type": "INTEGER",
+                    "description": "Number of shares to buy or sell"
+                },
+                "order_type": {
+                    "type": "STRING",
+                    "description": "MARKET (default) | LIMIT"
+                },
+                "price": {
+                    "type": "NUMBER",
+                    "description": "Limit price in ₹ (only for LIMIT orders)"
+                },
+                "product_type": {
+                    "type": "STRING",
+                    "description": "CNC (delivery, long-term, default) | INTRADAY (same-day trading)"
+                },
+                "order_id": {
+                    "type": "STRING",
+                    "description": "Order ID for order_status action"
+                },
+                "confirm": {
+                    "type": "BOOLEAN",
+                    "description": "Set to true ONLY after user explicitly confirms the trade"
+                }
+            },
+            "required": ["action"]
         }
     },
 ]
@@ -703,6 +792,17 @@ class JarvisLive:
 
             elif name == "stock_analyzer":
                 r = await loop.run_in_executor(None, lambda: stock_analyzer(parameters=args, player=self.ui))
+                result = r or "Done."
+
+            elif name == "run_command":
+                self.ui.write_log(f"[Shell] Running: {args.get('command','')}")
+                r = await loop.run_in_executor(None, lambda: shell_executor(parameters=args, player=self.ui))
+                result = r or "Command executed."
+
+            elif name == "dhan_trade":
+                action_name = args.get("action", "")
+                self.ui.write_log(f"[Dhan] {action_name.upper()}: {args.get('symbol','')}")
+                r = await loop.run_in_executor(None, lambda: dhan_trader(parameters=args, player=self.ui))
                 result = r or "Done."
 
             elif name == "flight_finder":

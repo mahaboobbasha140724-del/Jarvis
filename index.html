@@ -182,6 +182,16 @@
                     <option value="Linux">Linux</option>
                 </select>
             </div>
+            <div class="divider"></div>
+            <div class="section-title">Dhan Trading (Indian Stocks)</div>
+            <div class="form-group">
+                <label>Dhan Client ID</label>
+                <input type="text" id="dhan-client-id" placeholder="Your Dhan Client ID">
+            </div>
+            <div class="form-group">
+                <label>Dhan Access Token</label>
+                <input type="password" id="dhan-access-token" placeholder="Your Dhan Access Token">
+            </div>
             <button class="btn" id="save-config-btn">Save &amp; Connect</button>
 
             <div class="divider"></div>
@@ -653,6 +663,8 @@ function connectWebSocket(){
                 document.getElementById('gemini-key').value = d.gemini_api_key||'';
                 document.getElementById('openrouter-key').value = d.openrouter_api_key||'';
                 document.getElementById('os-select').value = d.os_system||'Windows';
+                if(d.dhan_client_id) document.getElementById('dhan-client-id').value = d.dhan_client_id;
+                if(d.dhan_access_token) document.getElementById('dhan-access-token').value = d.dhan_access_token;
             }
         };
         ws.onclose = () => {
@@ -677,13 +689,24 @@ document.getElementById('save-config-btn').addEventListener('click', () => {
     const gemini = document.getElementById('gemini-key').value.trim();
     const openrouter = document.getElementById('openrouter-key').value.trim();
     const os = document.getElementById('os-select').value;
+    const dhanClientId = document.getElementById('dhan-client-id').value.trim();
+    const dhanToken = document.getElementById('dhan-access-token').value.trim();
 
     // Save locally for standalone use
     if(gemini) { localStorage.setItem('jarvis_gemini_key', gemini); }
     if(openrouter) { localStorage.setItem('jarvis_openrouter_key', openrouter); }
+    if(dhanClientId) { localStorage.setItem('jarvis_dhan_client_id', dhanClientId); }
+    if(dhanToken) { localStorage.setItem('jarvis_dhan_access_token', dhanToken); }
 
     if(ws && ws.readyState===WebSocket.OPEN){
-        ws.send(JSON.stringify({type:'save_config', gemini_api_key:gemini, openrouter_api_key:openrouter, os_system:os}));
+        ws.send(JSON.stringify({
+            type:'save_config',
+            gemini_api_key: gemini,
+            openrouter_api_key: openrouter,
+            os_system: os,
+            dhan_client_id: dhanClientId,
+            dhan_access_token: dhanToken
+        }));
         appendLog('SYS: Configuration saved to server and local storage.','log-sys');
     } else {
         appendLog('SYS: Configuration saved locally. Gemini AI mode active.','log-sys');
@@ -701,8 +724,12 @@ document.getElementById('save-config-btn').addEventListener('click', () => {
 (function restoreKeys(){
     const gKey = localStorage.getItem('jarvis_gemini_key');
     const oKey = localStorage.getItem('jarvis_openrouter_key');
+    const dhanCid = localStorage.getItem('jarvis_dhan_client_id');
+    const dhanTok = localStorage.getItem('jarvis_dhan_access_token');
     if(gKey){ document.getElementById('gemini-key').value = gKey; setMode('ai'); }
     if(oKey){ document.getElementById('openrouter-key').value = oKey; }
+    if(dhanCid){ document.getElementById('dhan-client-id').value = dhanCid; }
+    if(dhanTok){ document.getElementById('dhan-access-token').value = dhanTok; }
 })();
 
 // ═══════════════════════════════════════════════

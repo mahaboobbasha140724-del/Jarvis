@@ -186,7 +186,9 @@ async def websocket_endpoint(websocket: WebSocket):
         "type": "config",
         "gemini_api_key": config_data.get("gemini_api_key", ""),
         "openrouter_api_key": config_data.get("openrouter_api_key", ""),
-        "os_system": config_data.get("os_system", "Windows")
+        "os_system": config_data.get("os_system", "Windows"),
+        "dhan_client_id": config_data.get("dhan_client_id", ""),
+        "dhan_access_token": config_data.get("dhan_access_token", "")
     })
 
     # Send state and existing logs
@@ -217,14 +219,29 @@ async def websocket_endpoint(websocket: WebSocket):
                 gemini = payload.get("gemini_api_key", "").strip()
                 openrouter = payload.get("openrouter_api_key", "").strip()
                 os_name = payload.get("os_system", "Windows").strip()
+                dhan_client_id = payload.get("dhan_client_id", "").strip()
+                dhan_access_token = payload.get("dhan_access_token", "").strip()
                 
                 main.API_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Load existing config to avoid overwriting Dhan keys with empty string
+                existing = {}
+                if main.API_CONFIG_PATH.exists():
+                    try:
+                        with open(main.API_CONFIG_PATH, "r", encoding="utf-8") as f:
+                            existing = json.load(f)
+                    except Exception:
+                        pass
+                
+                new_config = {
+                    "gemini_api_key": gemini or existing.get("gemini_api_key", ""),
+                    "openrouter_api_key": openrouter or existing.get("openrouter_api_key", ""),
+                    "os_system": os_name,
+                    "dhan_client_id": dhan_client_id or existing.get("dhan_client_id", ""),
+                    "dhan_access_token": dhan_access_token or existing.get("dhan_access_token", "")
+                }
                 with open(main.API_CONFIG_PATH, "w", encoding="utf-8") as f:
-                    json.dump({
-                        "gemini_api_key": gemini,
-                        "openrouter_api_key": openrouter,
-                        "os_system": os_name
-                    }, f, indent=4)
+                    json.dump(new_config, f, indent=4)
                 
                 ui_instance._ready = True
                 ui_instance.write_log("SYS: Configuration updated successfully.")
