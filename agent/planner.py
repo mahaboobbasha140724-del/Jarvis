@@ -178,10 +178,9 @@ def _get_api_key() -> str:
 
 
 def create_plan(goal: str, context: str = "") -> dict:
-    import google.generativeai as genai
+    from core.gemini_wrapper import ModernGenerativeModel
 
-    genai.configure(api_key=_get_api_key())
-    model = genai.GenerativeModel(
+    model = ModernGenerativeModel(
         model_name="gemini-2.5-flash-lite",
         system_instruction=PLANNER_PROMPT
     )
@@ -238,10 +237,9 @@ def _fallback_plan(goal: str) -> dict:
 
 
 def replan(goal: str, completed_steps: list, failed_step: dict, error: str) -> dict:
-    import google.generativeai as genai
+    from core.gemini_wrapper import ModernGenerativeModel
 
-    genai.configure(api_key=_get_api_key())
-    model = genai.GenerativeModel(
+    model = ModernGenerativeModel(
         model_name="gemini-2.5-flash",
         system_instruction=PLANNER_PROMPT
     )
