@@ -37,6 +37,7 @@ from actions.game_updater      import game_updater
 from actions.stock_analyzer    import stock_analyzer
 from actions.shell_executor    import shell_executor
 from actions.dhan_trader       import dhan_trader
+from actions.billionaire_signals import billionaire_signals
 
 
 def get_base_dir():
@@ -599,6 +600,61 @@ TOOL_DECLARATIONS = [
             "required": ["action"]
         }
     },
+    {
+        "name": "billionaire_signals",
+        "description": (
+            "Accesses or publishes trading signals to the Billionaire Signals website database (MongoDB). "
+            "Use for: posting new BUY/SELL signals (stock_name, type, entry_price, stop_loss, target, expiry, contract), "
+            "listing existing signals, and deleting signals. "
+            "Always call this when the user asks to post a trade signal, publish a report, or list/manage signals on the website."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "description": "post | list | delete"
+                },
+                "stock_name": {
+                    "type": "STRING",
+                    "description": "Stock name (e.g. RELIANCE, TCS, INFY)"
+                },
+                "type": {
+                    "type": "STRING",
+                    "description": "BUY | SELL"
+                },
+                "entry_price": {
+                    "type": "NUMBER",
+                    "description": "Entry trigger price"
+                },
+                "stop_loss": {
+                    "type": "NUMBER",
+                    "description": "Stop Loss price"
+                },
+                "target": {
+                    "type": "NUMBER",
+                    "description": "Target price"
+                },
+                "expiry": {
+                    "type": "STRING",
+                    "description": "Expiry month/year (e.g. 'JUN 2026')"
+                },
+                "contract": {
+                    "type": "STRING",
+                    "description": "Option/Future contract name (e.g. 'JUN 2026 3000 CE')"
+                },
+                "status": {
+                    "type": "STRING",
+                    "description": "ACTIVE | HIT_TARGET | HIT_SL"
+                },
+                "signal_id": {
+                    "type": "STRING",
+                    "description": "ID of signal to delete"
+                }
+            },
+            "required": ["action"]
+        }
+    },
 ]
 
 
@@ -803,6 +859,12 @@ class JarvisLive:
                 action_name = args.get("action", "")
                 self.ui.write_log(f"[Dhan] {action_name.upper()}: {args.get('symbol','')}")
                 r = await loop.run_in_executor(None, lambda: dhan_trader(parameters=args, player=self.ui))
+                result = r or "Done."
+
+            elif name == "billionaire_signals":
+                action_name = args.get("action", "")
+                self.ui.write_log(f"[Billionaire] {action_name.upper()}: {args.get('stock_name','')}")
+                r = await loop.run_in_executor(None, lambda: billionaire_signals(parameters=args, player=self.ui))
                 result = r or "Done."
 
             elif name == "flight_finder":

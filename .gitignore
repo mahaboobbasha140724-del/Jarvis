@@ -15,3 +15,5 @@ Thumbs.db
 static/
 uploads/
 stock_report_*.md
+
+.vercel
