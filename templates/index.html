@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S: Arc Reactor Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #00060a;
+            --panel-bg: rgba(1, 13, 20, 0.7);
+            --border-color: #0d3347;
+            --border-active: #00d4ff;
+            --color-pri: #00d4ff;
+            --color-sec: #ff6b00;
+            --color-green: #00ff88;
+            --text-main: #8ffcff;
+            --text-dim: #3a8a9a;
+            --text-white: #d8f8ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 40, 60, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 40, 60, 0.15) 0%, transparent 40%);
+        }
+
+        /* Ambient glowing grid background */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(13, 51, 71, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(13, 51, 71, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header {
+            height: 70px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .logo-section h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--text-white);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-section span {
+            font-size: 0.75rem;
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--color-pri);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .system-metrics {
+            display: flex;
+            gap: 25px;
+        }
+
+        .metric-card {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .metric-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--color-pri);
+            font-weight: 600;
+        }
+
+        /* Layout Grid */
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 350px 1fr 380px;
+            gap: 20px;
+            padding: 20px;
+            z-index: 5;
+            height: calc(100vh - 70px);
+        }
+
+        /* Glass Panel */
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1.5px;
+            color: var(--text-white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Center Column: Arc Reactor Core */
+        .center-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .reactor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Arc Reactor CSS Animation */
+        .reactor-core {
+            width: 250px;
+            height: 250px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Outer Glow Rings */
+        .reactor-outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px dashed var(--color-pri);
+            border-radius: 50%;
+            animation: rotate-clockwise 15s linear infinite;
+            filter: drop-shadow(0 0 15px var(--color-pri));
+            transition: all 0.5s ease;
+        }
+
+        .reactor-inner {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border: 3px double var(--color-pri);
+            border-radius: 50%;
+            animation: rotate-counter-clockwise 8s linear infinite;
+            opacity: 0.8;
+            transition: all 0.5s ease;
+        }
+
+        .reactor-center {
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, var(--text-white) 0%, rgba(0, 212, 255, 0.4) 60%, transparent 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px var(--color-pri);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease;
+        }
+
+        .reactor-center-logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid rgba(0, 212, 255, 0.5);
+        }
+
+        /* Reactor States */
+        .state-LISTENING .reactor-outer {
+            border-color: var(--color-pri);
+            animation-duration: 8s;
+            filter: drop-shadow(0 0 25px var(--color-pri));
+        }
+        .state-LISTENING .reactor-center {
+            box-shadow: 0 0 50px var(--color-pri);
+        }
+
+        .state-THINKING .reactor-outer {
+            border-color: var(--color-sec);
+            animation-duration: 4s;
+            filter: drop-shadow(0 0 25px var(--color-sec));
+        }
+        .state-THINKING .reactor-inner {
+            border-color: var(--color-sec);
+            animation-duration: 2s;
+        }
+        .state-THINKING .reactor-center {
+            background: radial-gradient(circle, #fff 0%, rgba(255, 107, 0, 0.4) 60%, transparent 100%);
+            box-shadow: 0 0 50px var(--color-sec);
+        }
+
+        .state-SPEAKING .reactor-outer {
+            border-color: var(--color-green);
+            animation-duration: 2s;
+            filter: drop-shadow(0 0 30px var(--color-green));
+        }
+        .state-SPEAKING .reactor-inner {
+            border-color: var(--color-green);
+            animation-duration: 1s;
+        }
+        .state-SPEAKING .reactor-center {
+            background: radial-gradient(circle, #fff 0%, rgba(0, 255, 136, 0.4) 60%, transparent 100%);
+            box-shadow: 0 0 60px var(--color-green);
+        }
+
+        @keyframes rotate-clockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes rotate-counter-clockwise {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        .status-badge {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--color-pri);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--color-pri);
+            box-shadow: 0 0 10px var(--color-pri);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 15px var(--color-pri); }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* Left/Right Columns: Console & Terminal */
+        .terminal-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 4, 8, 0.8);
+        }
+
+        .terminal-output {
+            flex: 1;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-entry {
+            border-left: 2px solid var(--border-color);
+            padding-left: 10px;
+        }
+        .log-sys { color: var(--text-dim); }
+        .log-user { color: var(--color-sec); border-left-color: var(--color-sec); }
+        .log-jarvis { color: var(--color-pri); border-left-color: var(--color-pri); }
+        .log-tool { color: var(--color-green); border-left-color: var(--color-green); }
+
+        .terminal-input-container {
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            background: rgba(1, 13, 20, 0.9);
+        }
+
+        .terminal-input-prefix {
+            padding: 15px 5px 15px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--color-pri);
+            font-weight: bold;
+        }
+
+        .terminal-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-white);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            padding: 15px 15px 15px 0;
+            outline: none;
+        }
+
+        /* File Upload Panel */
+        .upload-panel {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(1, 21, 32, 0.2);
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--color-pri);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .dropzone p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 5px;
+        }
+
+        .uploaded-file-info {
+            background: rgba(1, 15, 24, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-size: 0.8rem;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-remove-btn {
+            background: transparent;
+            border: none;
+            color: var(--color-sec);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Memory / Settings Panel */
+        .settings-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        .form-group input, .form-group select {
+            background: rgba(0, 8, 15, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text-white);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: var(--color-pri);
+        }
+
+        .save-settings-btn {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 122, 153, 0.2) 100%);
+            border: 1px solid var(--color-pri);
+            color: var(--text-white);
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .save-settings-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.4) 0%, rgba(0, 122, 153, 0.4) 100%);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-pri);
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-overlay"></div>
+
+    <header>
+        <div class="logo-section">
+            <h1>J.A.R.V.I.S <span>ARC REACTOR</span></h1>
+        </div>
+        <div class="system-metrics">
+            <div class="metric-card">
+                <span class="metric-label">CPU Usage</span>
+                <span class="metric-value" id="cpu-val">0.0%</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">RAM Usage</span>
+                <span class="metric-value" id="ram-val">0.0%</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Network</span>
+                <span class="metric-value" id="net-val">0.0 MB/s</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Panel: Settings & File uploads -->
+        <div class="glass-panel" style="grid-column: 1;">
+            <div class="panel-header">
+                <span>System Parameters</span>
+            </div>
+            <div class="settings-content">
+                <div class="form-group">
+                    <label>Gemini API Key</label>
+                    <input type="password" id="gemini-key" placeholder="Enter Gemini key...">
+                </div>
+                <div class="form-group">
+                    <label>OpenRouter API Key</label>
+                    <input type="password" id="openrouter-key" placeholder="Enter OpenRouter key...">
+                </div>
+                <div class="form-group">
+                    <label>Operating System</label>
+                    <select id="os-select">
+                        <option value="Windows">Windows</option>
+                        <option value="Darwin">macOS</option>
+                        <option value="Linux">Linux</option>
+                    </select>
+                </div>
+                <button class="save-settings-btn" id="save-config-btn">Save Configurations</button>
+            </div>
+
+            <div class="panel-header" style="border-top: 1px solid var(--border-color);">
+                <span>File Intelligence</span>
+            </div>
+            <div class="upload-panel">
+                <div class="dropzone" id="file-dropzone">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px; color: var(--color-pri);">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <div style="font-size: 0.8rem; font-weight: 600;">Upload Reference File</div>
+                    <p>Drop PDF, code, or images here</p>
+                </div>
+                <div class="uploaded-file-info" id="file-info-container">
+                    <span id="file-name-span" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
+                    <button class="file-remove-btn" id="remove-file-btn">Remove</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel: The Reactor Core -->
+        <div class="center-column" style="grid-column: 2;">
+            <div class="reactor-container" id="reactor-wrapper">
+                <div class="reactor-core" id="reactor-trigger">
+                    <div class="reactor-outer"></div>
+                    <div class="reactor-inner"></div>
+                    <div class="reactor-center">
+                        <div class="reactor-center-logo" style="background-image: url('/static/face.png');"></div>
+                    </div>
+                </div>
+                <div class="status-badge">
+                    <div class="status-pulse" id="state-pulse"></div>
+                    <span id="state-text">Offline</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Terminal Output and Controls -->
+        <div class="glass-panel terminal-panel" style="grid-column: 3;">
+            <div class="panel-header">
+                <span>Active Console Logs</span>
+            </div>
+            <div class="terminal-output" id="logs-container">
+                <div class="log-entry log-sys">SYS: Establishing interface connection...</div>
+            </div>
+            <div class="terminal-input-container">
+                <span class="terminal-input-prefix">JARVIS ></span>
+                <input type="text" class="terminal-input" id="cmd-input" placeholder="Type system command or message..." autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+        let ws;
+
+        const logsContainer = document.getElementById('logs-container');
+        const cmdInput = document.getElementById('cmd-input');
+        const stateText = document.getElementById('state-text');
+        const reactorWrapper = document.getElementById('reactor-wrapper');
+        const statePulse = document.getElementById('state-pulse');
+        const cpuVal = document.getElementById('cpu-val');
+        const ramVal = document.getElementById('ram-val');
+        const netVal = document.getElementById('net-val');
+
+        // Config Elements
+        const geminiKeyInput = document.getElementById('gemini-key');
+        const openrouterKeyInput = document.getElementById('openrouter-key');
+        const osSelect = document.getElementById('os-select');
+        const saveConfigBtn = document.getElementById('save-config-btn');
+
+        // Dropzone Elements
+        const dropzone = document.getElementById('file-dropzone');
+        const fileInfoContainer = document.getElementById('file-info-container');
+        const fileNameSpan = document.getElementById('file-name-span');
+        const removeFileBtn = document.getElementById('remove-file-btn');
+
+        function appendLog(text) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            if (text.startsWith('You:')) {
+                entry.classList.add('log-user');
+            } else if (text.startsWith('Jarvis:')) {
+                entry.classList.add('log-jarvis');
+            } else if (text.startsWith('SYS:')) {
+                entry.classList.add('log-sys');
+            } else if (text.startsWith('[JARVIS]') || text.startsWith('📞')) {
+                entry.classList.add('log-tool');
+            } else {
+                entry.classList.add('log-sys');
+            }
+
+            entry.textContent = text;
+            logsContainer.appendChild(entry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function setSystemState(state) {
+            reactorWrapper.className = `reactor-container state-${state}`;
+            stateText.textContent = state;
+            
+            // Adjust pulse color dynamically
+            if (state === 'LISTENING') {
+                statePulse.style.backgroundColor = 'var(--color-pri)';
+                statePulse.style.boxShadow = '0 0 10px var(--color-pri)';
+            } else if (state === 'THINKING') {
+                statePulse.style.backgroundColor = 'var(--color-sec)';
+                statePulse.style.boxShadow = '0 0 10px var(--color-sec)';
+            } else if (state === 'SPEAKING') {
+                statePulse.style.backgroundColor = 'var(--color-green)';
+                statePulse.style.boxShadow = '0 0 10px var(--color-green)';
+            } else {
+                statePulse.style.backgroundColor = '#666';
+                statePulse.style.boxShadow = 'none';
+            }
+        }
+
+        function connectWebSocket() {
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                appendLog('SYS: Holographic display link online.');
+                setSystemState('LISTENING');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'log') {
+                    appendLog(data.text);
+                } else if (data.type === 'state') {
+                    setSystemState(data.state);
+                } else if (data.type === 'metrics') {
+                    cpuVal.textContent = `${data.cpu.toFixed(1)}%`;
+                    ramVal.textContent = `${data.mem.toFixed(1)}%`;
+                    netVal.textContent = `${data.net.toFixed(2)} MB/s`;
+                } else if (data.type === 'config') {
+                    geminiKeyInput.value = data.gemini_api_key || '';
+                    openrouterKeyInput.value = data.openrouter_api_key || '';
+                    osSelect.value = data.os_system || 'Windows';
+                }
+            };
+
+            ws.onclose = () => {
+                appendLog('SYS: Disconnected. Reconnecting in 3s...');
+                setSystemState('OFFLINE');
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = () => {
+                setSystemState('OFFLINE');
+            };
+        }
+
+        // Send Command
+        cmdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = cmdInput.value.trim();
+                if (val && ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'command', text: val }));
+                    cmdInput.value = '';
+                }
+            }
+        });
+
+        // Save Config
+        saveConfigBtn.addEventListener('click', () => {
+            const gemini = geminiKeyInput.value.trim();
+            const openrouter = openrouterKeyInput.value.trim();
+            const os = osSelect.value;
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'save_config',
+                    gemini_api_key: gemini,
+                    openrouter_api_key: openrouter,
+                    os_system: os
+                }));
+                appendLog('SYS: Configuration parameters saved.');
+            }
+        });
+
+        // Drag and drop / File Upload
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length > 0) {
+                uploadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        dropzone.addEventListener('click', () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.onchange = () => {
+                if (fileInput.files.length > 0) {
+                    uploadFile(fileInput.files[0]);
+                }
+            };
+            fileInput.click();
+        });
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            appendLog(`SYS: Uploading file "${file.name}"...`);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    appendLog(`SYS: Upload complete. Loaded "${file.name}".`);
+                    fileNameSpan.textContent = file.name;
+                    fileInfoContainer.style.display = 'flex';
+                } else {
+                    appendLog(`SYS: Error loading file: ${data.message}`);
+                }
+            })
+            .catch(err => {
+                appendLog(`SYS: Upload failure: ${err.message}`);
+            });
+        }
+
+        removeFileBtn.addEventListener('click', () => {
+            fetch('/remove-file', { method: 'POST' })
+            .then(() => {
+                appendLog('SYS: Reference file detached.');
+                fileInfoContainer.style.display = 'none';
+                fileNameSpan.textContent = '';
+            });
+        });
+
+        connectWebSocket();
+    </script>
+</body>
+</html>

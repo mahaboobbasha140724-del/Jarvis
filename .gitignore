@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
@@ -12,3 +12,5 @@ memory/long_term.json
 *.log
 .DS_Store
 Thumbs.db
+static/
+uploads/
