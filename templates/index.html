@@ -568,8 +568,12 @@
     </div>
 
     <script>
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const apiBase = isLocalhost ? '' : 'http://127.0.0.1:8000';
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+        const wsUrl = isLocalhost 
+            ? `${wsProtocol}//${window.location.host}/ws`
+            : `ws://127.0.0.1:8000/ws`;
         let ws;
 
         const logsContainer = document.getElementById('logs-container');
@@ -735,7 +739,7 @@
 
             appendLog(`SYS: Uploading file "${file.name}"...`);
 
-            fetch('/upload', {
+            fetch(`${apiBase}/upload`, {
                 method: 'POST',
                 body: formData
             })
@@ -755,7 +759,7 @@
         }
 
         removeFileBtn.addEventListener('click', () => {
-            fetch('/remove-file', { method: 'POST' })
+            fetch(`${apiBase}/remove-file`, { method: 'POST' })
             .then(() => {
                 appendLog('SYS: Reference file detached.');
                 fileInfoContainer.style.display = 'none';

@@ -38,6 +38,9 @@ class WebJarvisUI:
         # Check if config exists on startup
         if self._check_api_keys():
             self._ready = True
+            self.write_log("SYS: API keys detected. Connecting to Gemini Live...")
+        else:
+            self.write_log("SYS: JARVIS is offline. Please enter your Gemini & OpenRouter keys in the 'System Parameters' panel to connect.")
 
     def _check_api_keys(self) -> bool:
         if not main.API_CONFIG_PATH.exists():
@@ -191,14 +194,17 @@ async def websocket_endpoint(websocket: WebSocket):
             
             if payload.get("type") == "command":
                 cmd_text = payload.get("text", "").strip()
-                if cmd_text and ui_instance.on_text_command:
+                if cmd_text:
                     ui_instance.write_log(f"You: {cmd_text}")
-                    # Run callback in background thread
-                    threading.Thread(
-                        target=ui_instance.on_text_command,
-                        args=(cmd_text,),
-                        daemon=True
-                    ).start()
+                    if ui_instance.on_text_command:
+                        # Run callback in background thread
+                        threading.Thread(
+                            target=ui_instance.on_text_command,
+                            args=(cmd_text,),
+                            daemon=True
+                        ).start()
+                    else:
+                        ui_instance.write_log("SYS: JARVIS is offline. Please configure your API keys first to enable interaction.")
             
             elif payload.get("type") == "save_config":
                 gemini = payload.get("gemini_api_key", "").strip()
