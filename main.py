@@ -40,6 +40,7 @@ from actions.stock_analyzer    import stock_analyzer
 from actions.shell_executor    import shell_executor
 from actions.dhan_trader       import dhan_trader
 from actions.billionaire_signals import billionaire_signals
+from actions.gcs_manager import gcs_manager
 
 
 def get_base_dir():
@@ -657,6 +658,41 @@ TOOL_DECLARATIONS = [
             "required": ["action"]
         }
     },
+    {
+        "name": "gcs_manager",
+        "description": (
+            "Manages Google Cloud Storage (GCS) buckets and files. "
+            "Use for: listing all GCS buckets, listing files in a specific bucket, "
+            "uploading local files to a GCS bucket, and downloading files from a GCS bucket. "
+            "It automatically authenticates using Application Default Credentials (ADC)."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "description": "list_buckets | list_files | upload | download"
+                },
+                "bucket_name": {
+                    "type": "STRING",
+                    "description": "GCS bucket name"
+                },
+                "source_file": {
+                    "type": "STRING",
+                    "description": "Local path of the file to upload"
+                },
+                "destination_blob": {
+                    "type": "STRING",
+                    "description": "Target blob name/path inside the bucket"
+                },
+                "destination_file": {
+                    "type": "STRING",
+                    "description": "Local path where downloaded file will be saved"
+                }
+            },
+            "required": ["action"]
+        }
+    },
 ]
 
 
@@ -867,6 +903,12 @@ class JarvisLive:
                 action_name = args.get("action", "")
                 self.ui.write_log(f"[Billionaire] {action_name.upper()}: {args.get('stock_name','')}")
                 r = await loop.run_in_executor(None, lambda: billionaire_signals(parameters=args, player=self.ui))
+                result = r or "Done."
+
+            elif name == "gcs_manager":
+                action_name = args.get("action", "")
+                self.ui.write_log(f"[GCS] {action_name.upper()}")
+                r = await loop.run_in_executor(None, lambda: gcs_manager(parameters=args, player=self.ui))
                 result = r or "Done."
 
             elif name == "flight_finder":
