@@ -49,9 +49,15 @@ def get_base_dir():
     return Path(__file__).resolve().parent
 
 
+def get_bundle_dir():
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parent
+
+
 BASE_DIR        = get_base_dir()
 API_CONFIG_PATH = BASE_DIR / "config" / "api_keys.json"
-PROMPT_PATH     = BASE_DIR / "core" / "prompt.txt"
+PROMPT_PATH     = get_bundle_dir() / "core" / "prompt.txt"
 LIVE_MODEL          = "models/gemini-2.5-flash-native-audio-preview-12-2025"
 CHANNELS            = 1
 SEND_SAMPLE_RATE    = 16000

@@ -286,6 +286,8 @@ async def broadcast_metrics_loop():
 async def startup_event():
     ui_instance.loop = asyncio.get_running_loop()
     asyncio.create_task(broadcast_metrics_loop())
+    # Start JARVIS engine in a separate daemon thread
+    threading.Thread(target=run_jarvis_engine, daemon=True).start()
 
 def run_jarvis_engine():
     ui_instance.wait_for_api_key()
@@ -298,9 +300,6 @@ def run_jarvis_engine():
         print(f"JARVIS Engine Error: {e}")
 
 if __name__ == "__main__":
-    # Start JARVIS engine in a separate daemon thread
-    threading.Thread(target=run_jarvis_engine, daemon=True).start()
-    
     # Run FastAPI web server (blocking main thread)
     print("Starting JARVIS Web Server on http://localhost:8000 ...")
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
