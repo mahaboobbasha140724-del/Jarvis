@@ -715,15 +715,127 @@ class JarvisLive:
         self.ui.on_text_command = self._on_text_command
 
     def _on_text_command(self, text: str):
-        if not self._loop or not self.session:
+        if not self._loop:
             return
-        asyncio.run_coroutine_threadsafe(
-            self.session.send_client_content(
-                turns={"parts": [{"text": text}]},
-                turn_complete=True
-            ),
-            self._loop
-        )
+        
+        async def handle_local_or_fallback():
+            try:
+                handled = await self._try_local_execution(text)
+            except Exception as e:
+                print(f"[Local Router] Error: {e}")
+                handled = False
+            
+            if not handled:
+                if self.session:
+                    await self.session.send_client_content(
+                        turns={"parts": [{"text": text}]},
+                        turn_complete=True
+                    )
+                else:
+                    self.ui.write_log("SYS: Offline mode. Enter Gemini API key to activate cloud AI, or run simple local commands.")
+
+        asyncio.run_coroutine_threadsafe(handle_local_or_fallback(), self._loop)
+
+    async def _try_local_execution(self, text: str) -> bool:
+        import re
+        low = text.lower().strip()
+        loop = asyncio.get_event_loop()
+
+        # 1. Open App: "open chrome", "launch notepad", "start calculator"
+        open_match = re.match(r"^(?:open|launch|start)\s+(.+)$", low)
+        if open_match:
+            app_name = open_match.group(1).strip()
+            self.ui.write_log(f"SYS [Local]: Opening {app_name}")
+            try:
+                r = await loop.run_in_executor(None, lambda: open_app(parameters={"app_name": app_name}, response=None, player=self.ui))
+                msg = r or f"Opened {app_name}."
+                self.ui.write_log(f"Jarvis: {msg}")
+                self.speak(msg)
+                return True
+            except Exception as e:
+                print(f"[Local Router] Open app error: {e}")
+
+        # 2. Volume control: "volume up", "volume down", "mute", "unmute"
+        if "volume up" in low or "increase volume" in low:
+            self.ui.write_log("SYS [Local]: Volume Up")
+            try:
+                await loop.run_in_executor(None, lambda: computer_settings(parameters={"action": "volume_up"}, response=None, player=self.ui))
+                self.ui.write_log("Jarvis: Volume increased.")
+                return True
+            except Exception:
+                pass
+        if "volume down" in low or "decrease volume" in low:
+            self.ui.write_log("SYS [Local]: Volume Down")
+            try:
+                await loop.run_in_executor(None, lambda: computer_settings(parameters={"action": "volume_down"}, response=None, player=self.ui))
+                self.ui.write_log("Jarvis: Volume decreased.")
+                return True
+            except Exception:
+                pass
+        if low == "mute":
+            self.ui.write_log("SYS [Local]: Mute")
+            try:
+                await loop.run_in_executor(None, lambda: computer_settings(parameters={"action": "mute"}, response=None, player=self.ui))
+                self.ui.write_log("Jarvis: System muted.")
+                return True
+            except Exception:
+                pass
+
+        # 3. Screenshot: "take screenshot", "capture screen", "screenshot"
+        if "screenshot" in low or "capture screen" in low:
+            self.ui.write_log("SYS [Local]: Screenshot")
+            try:
+                await loop.run_in_executor(None, lambda: desktop_control(parameters={"action": "screenshot"}, player=self.ui))
+                self.ui.write_log("Jarvis: Screenshot captured.")
+                return True
+            except Exception:
+                pass
+
+        # 4. Weather: "weather in london", "weather"
+        weather_match = re.match(r"^(?:weather|temperature)(?:\s+in)?(?:\s+of)?(?:\s+(.+))?$", low)
+        if weather_match:
+            city = weather_match.group(1)
+            city_str = city.strip() if city else "your location"
+            self.ui.write_log(f"SYS [Local]: Fetching weather for {city_str}")
+            try:
+                args = {"location": city_str} if city else {}
+                r = await loop.run_in_executor(None, lambda: weather_action(parameters=args, player=self.ui))
+                msg = r or "Weather delivered."
+                self.ui.write_log(f"Jarvis: {msg}")
+                self.speak(msg)
+                return True
+            except Exception as e:
+                print(f"[Local Router] Weather error: {e}")
+
+        # 5. Simple Search: "search for apple", "google apple"
+        search_match = re.match(r"^(?:search|google|lookup)(?:\s+for)?\s+(.+)$", low)
+        if search_match:
+            query = search_match.group(1).strip()
+            self.ui.write_log(f"SYS [Local]: Searching for {query}")
+            try:
+                r = await loop.run_in_executor(None, lambda: web_search_action(parameters={"query": query}, player=self.ui))
+                msg = r or "Search completed."
+                self.ui.write_log(f"Jarvis: {msg}")
+                self.speak("Here are the search results, sir.")
+                return True
+            except Exception as e:
+                print(f"[Local Router] Search error: {e}")
+
+        # 6. Shell executor: "run dir", "execute ipconfig", "run <cmd>"
+        run_match = re.match(r"^(?:run|execute|cmd)\s+(.+)$", low)
+        if run_match:
+            cmd = run_match.group(1).strip()
+            self.ui.write_log(f"SYS [Local]: Executing {cmd}")
+            try:
+                r = await loop.run_in_executor(None, lambda: shell_executor(parameters={"command": cmd}, player=self.ui))
+                msg = r or "Command executed."
+                self.ui.write_log(f"Jarvis: {msg}")
+                return True
+            except Exception as e:
+                self.ui.write_log(f"Jarvis: Failed to run command: {e}")
+                return True
+
+        return False
 
     def set_speaking(self, value: bool):
         with self._speaking_lock:
@@ -1009,6 +1121,7 @@ class JarvisLive:
 
                         if sc.turn_complete:
                             self.set_speaking(False)
+                            self.audio_in_queue.put_nowait(None)
 
                             full_in = " ".join(in_buf).strip()
                             if full_in:
@@ -1056,6 +1169,9 @@ class JarvisLive:
         try:
             while True:
                 chunk = await self.audio_in_queue.get()
+                if chunk is None:
+                    self.set_speaking(False)
+                    continue
                 self.set_speaking(True)
                 await asyncio.to_thread(stream.write, chunk)
         except Exception as e:
