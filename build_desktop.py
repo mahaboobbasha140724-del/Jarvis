@@ -22,10 +22,10 @@ def main():
         print("Removing old spec file...")
         spec_file.unlink()
 
-    # Build command
+    # Build command - use onedir for reliability (avoids temp extraction crash)
     cmd = [
         sys.executable, "-m", "PyInstaller",
-        "--onefile",
+        "--onedir",        # folder-based: stable, no temp extraction flash
         "--noconsole",
         "--name", "JARVIS",
         "--add-data", "templates;templates",
@@ -33,14 +33,17 @@ def main():
         "--add-data", "core;core",
         "--add-data", "actions;actions",
         "--add-data", "memory;memory",
+        "--add-data", "config;config",
         "--hidden-import", "sounddevice",
         "--hidden-import", "google.genai",
         "--hidden-import", "google.genai.types",
         "--hidden-import", "yfinance",
         "--hidden-import", "pyngrok",
         "--hidden-import", "pymongo",
-        "--hidden-import", "dnspython",
+        "--hidden-import", "dns",
         "--hidden-import", "webview",
+        "--collect-all", "webview",
+        "--collect-all", "sounddevice",
         "desktop_main.py"
     ]
     
