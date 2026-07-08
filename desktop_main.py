@@ -52,7 +52,11 @@ def main():
             min_size=(1024, 768),
             resizable=True
         )
-        webview.start()
+        try:
+            webview.start(gui="qt")
+        except Exception:
+            webview.start()
+
 
     except Exception as e:
         err_msg = traceback.format_exc()

@@ -42,8 +42,15 @@ def main():
         "--hidden-import", "pymongo",
         "--hidden-import", "dns",
         "--hidden-import", "webview",
+        "--hidden-import", "PyQt6",
+        "--hidden-import", "PyQt6.QtCore",
+        "--hidden-import", "PyQt6.QtGui",
+        "--hidden-import", "PyQt6.QtWidgets",
+        "--hidden-import", "PyQt6.QtWebEngineWidgets",
+        "--hidden-import", "PyQt6.QtWebEngineCore",
         "--collect-all", "webview",
         "--collect-all", "sounddevice",
+        "--collect-all", "PyQt6",
         "desktop_main.py"
     ]
     
